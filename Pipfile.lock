@@ -1,0 +1,34 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "f8bb2d2681183f86175825de3f470a2674c8492884488a524b04edcb835bb4f5"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.7"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "elftools": {
+            "editable": true,
+            "git": "https://github.com/eliben/pyelftools",
+            "ref": "9f12da56703fa7e805fc31a7af80b314b30a9c2e"
+        },
+        "pyelftools": {
+            "hashes": [
+                "sha256:86ac6cee19f6c945e8dedf78c6ee74f1112bd14da5a658d8c9d4103aed5756a2",
+                "sha256:cc0ea0de82b240a73ef4056fce44acbb4727dca7d66759371aff2bad457ed711"
+            ],
+            "index": "pypi",
+            "version": "==0.26"
+        }
+    },
+    "develop": {}
+}
