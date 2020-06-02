@@ -18,7 +18,7 @@ class Memory:
 
     def read_phys(self, phys_address, length):
         return subprocess.check_output(
-            f"ssh root@localhost -p 2022 'dd if=/dev/mem bs=1 skip={phys_address} count={length}'",
+            f"ssh root@localhost -p 2022 'dd if=/dev/mem bs=1 skip={phys_address} count={length} 2>/dev/null'",
             shell=True
         )
 
@@ -39,9 +39,33 @@ def main():
     path = '/usr/local/google/home/ksp/mfiles/learn/linux/linux/vmlinux'
     task_struct = dwarf2ctypes.get_type(path, b'task_struct', relocate_dwarf_sections=False)
     mem = Memory(VM( _parse_readelf_output(readelf_l_proc_kcore)))
-    buf = mem.read(0xffffffff82a12840, ctypes.sizeof(task_struct))
-    init_task = task_struct.from_buffer_copy(buf)
-    import pdb; pdb.set_trace()
+
+    def read_struct(struct_cls, addr: int):
+        buf = mem.read(addr, ctypes.sizeof(struct_cls))
+        return struct_cls.from_buffer_copy(buf)
+
+    def pointer_to_addr(pointer) -> int:
+        return ctypes.cast(pointer, ctypes.c_void_p).value
+
+    def list_next(struct, list_head_field_name):
+        next_list_head_addr = pointer_to_addr(getattr(struct, list_head_field_name).next)
+        next_addr = next_list_head_addr - getattr(struct.__class__, list_head_field_name).offset
+        return read_struct(struct.__class__, next_addr)
+
+    def c_str(c_byte_array) -> str:
+        codes = list(c_byte_array)
+        if 0 in codes:
+            codes = codes[:codes.index(0)]
+        return ''.join(chr(c) for c in codes)
+
+    init_task = read_struct(task_struct, 0xffffffff82a12840)
+
+    cur_task = init_task
+    while True:
+        print(f'pid={cur_task.pid}, comm={c_str(cur_task.comm)}')
+        cur_task = list_next(cur_task, 'tasks')
+        if cur_task.pid == 0:
+            break
 
 
 @dataclass

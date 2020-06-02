@@ -23,7 +23,6 @@ def get_type(binary_path, struct_name, relocate_dwarf_sections=True):
     print('Got dwarf_info')
     type_die = _find_type_die(dwarf_info, struct_name)
     type_ctypes = convert_type_die_to_ctypes(type_die)
-    import pdb; pdb.set_trace()
     return type_ctypes
 
 
