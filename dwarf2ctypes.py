@@ -363,6 +363,11 @@ def _dump(struct_die, struct_name=None, verbose=False):
                   f'type={member_type_die.tag:20}')
 
 
+def _dump_ctype_struct(struct):
+    for field_tuple in struct._fields_:
+        print(f'{field_tuple[0]}: {getattr(struct, field_tuple[0])}')
+
+
 def _convert_structure_type_die_to_ctypes(struct_die, declaration=False):
     assert struct_die.tag == 'DW_TAG_structure_type'
 
@@ -376,8 +381,6 @@ def _convert_structure_type_die_to_ctypes(struct_die, declaration=False):
         is_anon_struct = True
         # Can't have a declaration of an anon struct.
         declaration = False
-
-    _dump(struct_die, struct_name=struct_name)
 
     print(f'{stack_len}> converting {struct_name}')
 
@@ -414,6 +417,9 @@ def _convert_structure_type_die_to_ctypes(struct_die, declaration=False):
         for member_die in struct_die.iter_children()
     ]
 
+    # if struct_name in (b'task_struct', 'task_struct'):
+    #     import pdb; pdb.set_trace()
+
     def pad_fields(members_info):
         struct_fields = []
         struct_size = struct_die.attributes['DW_AT_byte_size'].value
@@ -430,18 +436,24 @@ def _convert_structure_type_die_to_ctypes(struct_die, declaration=False):
             bytes_so_far += n
 
         for member in members_info:
-            bytes_left = struct_size - bytes_so_far
             if member.offset > bytes_so_far:
                 pad(member.offset - bytes_so_far)
-            struct_fields.append((member.name, member.ctypes_type, member.bit_size))
+
             if member.offset < bytes_so_far:
                 assert member.bit_size is not None
-		# XXX
-                # if member.offset + member.size != bytes_so_far:
-                #     import pdb; pdb.set_trace()
+                # XXX
+                if member.offset + member.size != bytes_so_far:
+                    continue
+                continue  # XXX
                 # assert member.offset + member.size == bytes_so_far
             else:
                 bytes_so_far += member.size
+
+            struct_fields.append((
+                    member.name,
+                    member.ctypes_type,
+                    None # member.bit_size,
+            ))
 
         pad(struct_size - bytes_so_far)
 
@@ -479,11 +491,15 @@ def _convert_structure_type_die_to_ctypes(struct_die, declaration=False):
     #
     #     import pdb; pdb.set_trace()
     #
+
     _validate(struct_die, struct)
     print(f'{stack_len}> returning {struct_name}')
 
     if resolve_declaration:
         _declarations_to_be_resolved.pop(struct_name)
+
+    _dump(struct_die, struct_name=struct_name)
+    _dump_ctype_struct(struct)
 
     return struct
 

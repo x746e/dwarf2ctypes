@@ -1,6 +1,7 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 # Read all task_structs from /dev/mem, print them out as `pc -eo pid,comm`
 
+import ctypes
 from dataclasses import dataclass
 import subprocess
 
@@ -36,9 +37,10 @@ class VM:
 
 def main():
     path = '/usr/local/google/home/ksp/mfiles/learn/linux/linux/vmlinux'
-    type_ = dwarf2ctypes.get_type(path, b'task_struct', relocate_dwarf_sections=False)
+    task_struct = dwarf2ctypes.get_type(path, b'task_struct', relocate_dwarf_sections=False)
     mem = Memory(VM( _parse_readelf_output(readelf_l_proc_kcore)))
-    buf = mem.read(0xffffffff82a12840, 6779)
+    buf = mem.read(0xffffffff82a12840, ctypes.sizeof(task_struct))
+    init_task = task_struct.from_buffer_copy(buf)
     import pdb; pdb.set_trace()
 
 
